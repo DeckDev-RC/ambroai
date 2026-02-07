@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import { SendHorizontal, Loader2 } from "lucide-react";
 
 interface ChatInputProps {
@@ -8,7 +8,14 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 480);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +48,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     <form
       onSubmit={handleSubmit}
       style={{
-        padding: "16px 24px 24px",
+        padding: "16px 16px 20px",
         background: "var(--bg-primary)",
         borderTop: "1px solid var(--border)",
       }}
@@ -68,7 +75,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
-          placeholder="Pergunte sobre seus dados... (ex: Quantos pedidos pagos em dezembro?)"
+          placeholder={isMobile ? "Pergunte sobre seus dados..." : "Pergunte sobre seus dados... (ex: Quantos pedidos pagos em dezembro?)"}
           disabled={disabled}
           rows={1}
           style={{

@@ -3,7 +3,7 @@ import { api } from "../services/api";
 import { ChatMessage } from "../components/ChatMessage";
 import { ChatInput } from "../components/ChatInput";
 import { ConversationSidebar } from "../components/ConversationSidebar";
-import { Bot, LogOut, Trash2 } from "lucide-react";
+import { Bot, LogOut, Trash2, Menu } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -27,8 +27,21 @@ export function ChatPage({ onLogout }: ChatPageProps) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const user = api.getUser();
+
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -147,14 +160,32 @@ export function ChatPage({ onLogout }: ChatPageProps) {
         background: "var(--bg-primary)",
       }}
     >
+      {/* Mobile Backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <ConversationSidebar
-        conversations={conversations}
-        currentId={conversationId}
-        onSelect={handleSelectConversation}
-        onDelete={handleDeleteConversation}
-        onNewChat={handleNewChat}
-      />
+      {(!isMobile || sidebarOpen) && (
+        <div className={isMobile ? "sidebar-mobile-overlay" : ""}>
+          <ConversationSidebar
+            conversations={conversations}
+            currentId={conversationId}
+            onSelect={(conv) => {
+              handleSelectConversation(conv);
+              if (isMobile) setSidebarOpen(false);
+            }}
+            onDelete={handleDeleteConversation}
+            onNewChat={() => {
+              handleNewChat();
+              if (isMobile) setSidebarOpen(false);
+            }}
+          />
+        </div>
+      )}
 
       {/* Main Content */}
       <div
@@ -171,13 +202,32 @@ export function ChatPage({ onLogout }: ChatPageProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "12px 24px",
+            padding: isMobile ? "12px 16px" : "12px 24px",
             borderBottom: "1px solid var(--border)",
             background: "var(--bg-secondary)",
             flexShrink: 0,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* Mobile hamburger menu */}
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                style={{
+                  padding: "8px",
+                  background: "var(--bg-tertiary)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <div
               style={{
                 width: "36px",

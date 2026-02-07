@@ -121,3 +121,76 @@ body {
   background: var(--border);
   border-radius: 3px;
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE RESPONSIVENESS
+   ═══════════════════════════════════════════════ */
+
+/* Tablet and smaller */
+@media (max-width: 768px) {
+  :root {
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+  }
+
+  /* Hide sidebar by default on mobile - controlled by JS */
+  .sidebar-mobile-hidden {
+    display: none !important;
+  }
+
+  /* Mobile sidebar overlay */
+  .sidebar-mobile-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Backdrop when sidebar is open */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    animation: fadeIn 0.2s ease-out;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  :root {
+    --radius-sm: 6px;
+    --radius-md: 8px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  /* Wider scrollbars for touch */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+/* Touch device adjustments */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger tap targets */
+  button, 
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Disable hover effects that don't work on touch */
+  .no-touch-hover:hover {
+    background: inherit !important;
+  }
+}
