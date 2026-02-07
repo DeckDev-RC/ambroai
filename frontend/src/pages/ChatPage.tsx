@@ -165,10 +165,13 @@ export function ChatPage({ onLogout }: ChatPageProps) {
 
   return (
     <div
+      className="app-container"
       style={{
-        height: "100vh",
+        height: "100dvh",
+        minHeight: "-webkit-fill-available",
         display: "flex",
         background: "var(--bg-primary)",
+        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       {/* Mobile Backdrop */}
@@ -515,49 +518,49 @@ export function ChatPage({ onLogout }: ChatPageProps) {
                   {/* Suggestion chips — only on last assistant message, when not loading */}
                   {msg.role === "assistant" && msg.suggestions && msg.suggestions.length > 0 &&
                     i === messages.length - 1 && !loading && (
-                    <div
-                      className="suggestion-chips"
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        padding: "8px 24px 16px 68px",
-                        animation: "fadeIn 0.3s ease-out",
-                      }}
-                    >
-                      {msg.suggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          className="suggestion-chip"
-                          onClick={() => handleSend(suggestion)}
-                          style={{
-                            padding: "8px 14px",
-                            background: "var(--bg-tertiary)",
-                            border: "1px solid var(--border)",
-                            borderRadius: "var(--radius-full)",
-                            color: "var(--text-secondary)",
-                            fontSize: "12px",
-                            fontFamily: "var(--font-sans)",
-                            cursor: "pointer",
-                            transition: "all var(--transition)",
-                            whiteSpace: "nowrap",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "var(--accent)";
-                            e.currentTarget.style.color = "var(--accent)";
-                            e.currentTarget.style.background = "rgba(99,102,241,0.1)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                            e.currentTarget.style.background = "var(--bg-tertiary)";
-                          }}
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                      <div
+                        className="suggestion-chips"
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          padding: "8px 24px 16px 68px",
+                          animation: "fadeIn 0.3s ease-out",
+                        }}
+                      >
+                        {msg.suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            className="suggestion-chip"
+                            onClick={() => handleSend(suggestion)}
+                            style={{
+                              padding: "8px 14px",
+                              background: "var(--bg-tertiary)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "var(--radius-full)",
+                              color: "var(--text-secondary)",
+                              fontSize: "12px",
+                              fontFamily: "var(--font-sans)",
+                              cursor: "pointer",
+                              transition: "all var(--transition)",
+                              whiteSpace: "nowrap",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "var(--accent)";
+                              e.currentTarget.style.color = "var(--accent)";
+                              e.currentTarget.style.background = "rgba(99,102,241,0.1)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "var(--border)";
+                              e.currentTarget.style.color = "var(--text-secondary)";
+                              e.currentTarget.style.background = "var(--bg-tertiary)";
+                            }}
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                 </div>
               ))}
               {loading && (
