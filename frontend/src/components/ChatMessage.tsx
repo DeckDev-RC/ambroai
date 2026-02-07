@@ -1,17 +1,25 @@
-import { Bot, User } from "lucide-react";
+import { Bot, User, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useMemo } from "react";
 import { extractCharts, AmbroChart } from "./AmbroChart";
+
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostUSD: number;
+}
 
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
   isLoading?: boolean;
+  tokenUsage?: TokenUsage;
 }
 
-export function ChatMessage({ role, content, timestamp, isLoading }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, isLoading, tokenUsage }: ChatMessageProps) {
   const isUser = role === "user";
 
   // Extract charts from content
@@ -133,6 +141,34 @@ export function ChatMessage({ role, content, timestamp, isLoading }: ChatMessage
             className="message-content"
           >
             {renderContent()}
+
+            {/* Discrete token usage display */}
+            {tokenUsage && !isUser && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "12px",
+                  paddingTop: "8px",
+                  borderTop: "1px solid var(--border)",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  opacity: 0.7,
+                }}
+              >
+                <Zap size={10} />
+                <span>
+                  {tokenUsage.totalTokens.toLocaleString("pt-BR")} tokens
+                </span>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span>
+                  ~${tokenUsage.estimatedCostUSD < 0.01
+                    ? tokenUsage.estimatedCostUSD.toFixed(4)
+                    : tokenUsage.estimatedCostUSD.toFixed(3)}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

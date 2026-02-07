@@ -23,7 +23,7 @@ async function getMetadata() {
   }
   return cachedMetadata;
 }
-getMetadata().catch(() => {});
+getMetadata().catch(() => { });
 
 // ── Function Declarations ───────────────────────────────
 const DATE_PARAMS = {
@@ -37,155 +37,189 @@ const functionDeclarations: FunctionDeclaration[] = [
   {
     name: "countOrders",
     description: "Conta pedidos com filtros opcionais.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "totalSales",
     description: "Calcula faturamento total.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "avgTicket",
     description: "Calcula ticket medio com estatisticas (media, mediana, min, max, desvio padrao).",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "ordersByStatus",
     description: "Distribuicao de pedidos por status com percentuais.",
-    parameters: { type: "object" as Type, properties: {
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "ordersByMarketplace",
     description: "Vendas agrupadas por marketplace com valor e quantidade.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "salesByMonth",
     description: "Evolucao MENSAL de vendas com faturamento, quantidade, ticket medio e variacao percentual mes a mes. Use para: 'mes a mes', 'por mes', 'evolucao', 'historico', 'faturamento de cada mes', 'tendencia', 'sazonalidade'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "salesByDayOfWeek",
     description: "Performance por DIA DA SEMANA (segunda a domingo). Use para: 'melhor dia da semana', 'quando vendemos mais', 'dia mais forte', 'padrao semanal'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "topDays",
     description: "Ranking dos MELHORES ou PIORES dias de venda por faturamento e volume. Use para: 'melhor dia', 'pior dia', 'recordes', 'dias de pico', 'top 10 dias'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      limit: { type: "number" as Type, description: "Quantidade de dias no ranking (padrao 10)" },
-      order: { type: "string" as Type, description: "'best' para melhores, 'worst' para piores" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        limit: { type: "number" as Type, description: "Quantidade de dias no ranking (padrao 10)" },
+        order: { type: "string" as Type, description: "'best' para melhores, 'worst' para piores" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "cancellationRate",
     description: "Taxa de cancelamento geral e por marketplace. Mostra pedidos cancelados vs pagos, valor perdido. Use para: 'cancelamentos', 'taxa de cancelamento', 'quanto perdemos', 'pedidos cancelados'.",
-    parameters: { type: "object" as Type, properties: {
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "compareMarketplaces",
     description: "Comparacao DETALHADA entre todos os marketplaces: faturamento, participacao, ticket medio, taxa de cancelamento e conversao. Use para: 'comparar canais', 'qual marketplace melhor', 'analise de canais', 'mix de canais'.",
-    parameters: { type: "object" as Type, properties: { ...DATE_PARAMS }},
+    parameters: { type: "object" as Type, properties: { ...DATE_PARAMS } },
   },
   {
     name: "comparePeriods",
     description: "Compara dois periodos consecutivos (ex: este mes vs mes passado). Mostra variacao percentual de pedidos, faturamento e ticket medio. Use para: 'comparar meses', 'crescimento', 'este mes vs mes passado', 'evolucao', 'quanto crescemos'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "salesByHour",
     description: "Distribuicao de vendas por HORA DO DIA (0h-23h). Mostra horarios de pico e vale. Use para: 'horario de pico', 'que horas vendemos mais', 'distribuicao por hora', 'quando os clientes compram'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-      ...DATE_PARAMS,
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+        ...DATE_PARAMS,
+      }
+    },
   },
   {
     name: "executeSQLQuery",
     description: "SQL customizado na tabela orders. ULTIMO RECURSO.",
-    parameters: { type: "object" as Type, properties: {
-      sql: { type: "string" as Type, description: "Query SELECT" },
-    }, required: ["sql"] },
+    parameters: {
+      type: "object" as Type, properties: {
+        sql: { type: "string" as Type, description: "Query SELECT" },
+      }, required: ["sql"]
+    },
   },
   {
     name: "salesForecast",
     description: "PREVISAO de faturamento para proximo mes baseada em media movel e tendencia linear. Mostra tambem projecao do mes atual. Use para: 'previsao', 'quanto vamos vender', 'projecao', 'forecast', 'estimativa', 'meta', 'tendencia de vendas'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+      }
+    },
   },
   {
     name: "executiveSummary",
     description: "RESUMO EXECUTIVO completo do negocio com todos os KPIs: faturamento, ticket medio, taxa de cancelamento, mix de canais, melhor/pior mes, tendencia. Use para: 'resumo', 'diagnostico', 'visao geral', 'como esta meu negocio', 'dashboard', 'relatorio', 'KPIs'.",
-    parameters: { type: "object" as Type, properties: { ...DATE_PARAMS }},
+    parameters: { type: "object" as Type, properties: { ...DATE_PARAMS } },
   },
   {
     name: "marketplaceGrowth",
     description: "Evolucao MENSAL de cada marketplace separadamente. Mostra qual canal cresce mais rapido. Use para: 'crescimento por canal', 'qual marketplace cresce', 'evolucao do Bagy', 'historico por canal', 'tendencia por marketplace'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+      }
+    },
   },
   {
     name: "cancellationByMonth",
     description: "Taxa de cancelamento MES A MES com valor perdido, pedidos pagos vs cancelados. Use para: 'cancelamentos por mes', 'evolucao de cancelamentos', 'quanto perdi por mes', 'mes com mais cancelamento'.",
-    parameters: { type: "object" as Type, properties: {
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+      }
+    },
   },
   {
     name: "yearOverYear",
     description: "Comparacao ANO A ANO (YoY). Compara mesmos meses entre anos diferentes e totais anuais. Use para: 'comparar com ano passado', 'janeiro 2025 vs janeiro 2026', 'ano a ano', 'YoY', 'crescimento anual'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+      }
+    },
   },
   {
     name: "seasonalityAnalysis",
     description: "Analise de SAZONALIDADE e padroes. Identifica meses fortes/fracos, indice sazonal e padrao semanal. Use para: 'sazonalidade', 'padroes', 'quais meses sao melhores', 'quando vende mais', 'ciclos de venda', 'padrao do negocio'.",
-    parameters: { type: "object" as Type, properties: {
-      status: { type: "string" as Type, description: "Filtrar por status" },
-      marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
-    }},
+    parameters: {
+      type: "object" as Type, properties: {
+        status: { type: "string" as Type, description: "Filtrar por status" },
+        marketplace: { type: "string" as Type, description: "Filtrar por marketplace" },
+      }
+    },
   },
 ];
 
@@ -388,7 +422,7 @@ function formatFallback(fnName: string, result: unknown): string {
           datasets: [{ label: "Pedidos", data: entries.map(([, c]) => c) }],
         }) + "\n```";
         return "**Por status** (" + fNum(total) + "):\n\n" +
-          entries.map(([s, c]) => "- **" + (sPT[s] || s) + ":** " + fNum(c) + " (" + (total > 0 ? ((c/total)*100).toFixed(1) : "0") + "%)").join("\n") + chartBlock;
+          entries.map(([s, c]) => "- **" + (sPT[s] || s) + ":** " + fNum(c) + " (" + (total > 0 ? ((c / total) * 100).toFixed(1) : "0") + "%)").join("\n") + chartBlock;
       }
 
       case "ordersByMarketplace": {
@@ -439,7 +473,7 @@ function formatFallback(fnName: string, result: unknown): string {
       case "topDays": {
         const byRev = r.by_revenue as Array<{ date: string; count: number; total: number }>;
         return "**" + ((r.type as string) === "piores" ? "Piores" : "Melhores") + " dias (faturamento):**\n\n" +
-          byRev.map((d, i) => (i+1) + ". **" + d.date + ":** " + fBRL(d.total) + " (" + fNum(d.count) + " pedidos)").join("\n");
+          byRev.map((d, i) => (i + 1) + ". **" + d.date + ":** " + fBRL(d.total) + " (" + fNum(d.count) + " pedidos)").join("\n");
       }
 
       case "cancellationRate":
@@ -505,7 +539,7 @@ function formatFallback(fnName: string, result: unknown): string {
           "**Pedidos:** " + fNum((ov?.total_orders as number) || 0) + " | **Ticket medio:** " + fBRL((ov?.avg_ticket as number) || 0),
           "",
           "**Saude:** " + fNum((hl?.paid_orders as number) || 0) + " pagos (" + fBRL((hl?.paid_revenue as number) || 0) + ") | " +
-            fNum((hl?.cancelled_orders as number) || 0) + " cancelados (" + ((hl?.cancellation_rate as number) || 0).toFixed(1) + "%)",
+          fNum((hl?.cancelled_orders as number) || 0) + " cancelados (" + ((hl?.cancellation_rate as number) || 0).toFixed(1) + "%)",
           "",
           "**Canais:**",
           ...(ch || []).map((c) => "- " + (mPT[(c.marketplace as string)] || c.marketplace) + ": " + fBRL((c.revenue as number) || 0) + " (" + ((c.share as number) || 0).toFixed(1) + "%)"),
@@ -544,7 +578,7 @@ function formatFallback(fnName: string, result: unknown): string {
             fBRL((m.lost_revenue as number) || 0)),
           "",
           "**Total perdido:** " + fBRL((summary?.total_lost_revenue as number) || 0) +
-            " | **Taxa media:** " + ((summary?.avg_cancellation_rate as number) || 0).toFixed(1) + "%",
+          " | **Taxa media:** " + ((summary?.avg_cancellation_rate as number) || 0).toFixed(1) + "%",
         ].join("\n") + chartBlock;
       }
 
@@ -578,11 +612,37 @@ function formatFallback(fnName: string, result: unknown): string {
   }
 }
 
+// ── Token Usage Types ───────────────────────────────────
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostUSD: number;
+}
+
+export interface ProcessMessageResult {
+  text: string;
+  tokenUsage: TokenUsage;
+}
+
+// Gemini 2.5 Flash pricing (per 1M tokens) - May 2025
+const GEMINI_PRICING = {
+  input: 0.15 / 1_000_000,  // $0.15 per 1M input tokens
+  output: 0.60 / 1_000_000, // $0.60 per 1M output tokens
+};
+
+function calculateCost(inputTokens: number, outputTokens: number): number {
+  return (inputTokens * GEMINI_PRICING.input) + (outputTokens * GEMINI_PRICING.output);
+}
+
 // ── Main Agent ──────────────────────────────────────────
 export async function processMessage(
   userMessage: string,
   conversationHistory: ChatMessage[]
-): Promise<string> {
+): Promise<ProcessMessageResult> {
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+
   try {
     const history = buildHistory(conversationHistory);
     const systemPrompt = await buildSystemPrompt();
@@ -593,8 +653,19 @@ export async function processMessage(
       config: { systemInstruction: systemPrompt, tools: [{ functionDeclarations }], temperature: 0.3, maxOutputTokens: 4096 },
     });
 
+    // Track tokens from first call
+    if (response.usageMetadata) {
+      totalInputTokens += response.usageMetadata.promptTokenCount || 0;
+      totalOutputTokens += response.usageMetadata.candidatesTokenCount || 0;
+    }
+
     const candidate = response.candidates?.[0];
-    if (!candidate?.content?.parts) return "Desculpe, nao consegui processar. Tente novamente.";
+    if (!candidate?.content?.parts) {
+      return {
+        text: "Desculpe, nao consegui processar. Tente novamente.",
+        tokenUsage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) }
+      };
+    }
 
     const fcPart = candidate.content.parts.find((p) => p.functionCall);
 
@@ -631,20 +702,41 @@ export async function processMessage(
           config: { systemInstruction: systemPrompt, temperature: 0.3, maxOutputTokens: 4096 },
         });
 
+        // Track tokens from second call
+        if (fmtResp.usageMetadata) {
+          totalInputTokens += fmtResp.usageMetadata.promptTokenCount || 0;
+          totalOutputTokens += fmtResp.usageMetadata.candidatesTokenCount || 0;
+        }
+
         const text = fmtResp.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join("");
-        if (text && text.trim().length > 0) return text;
-        return formatFallback(name!, fnResult);
+        const tokenUsage: TokenUsage = {
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          totalTokens: totalInputTokens + totalOutputTokens,
+          estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens),
+        };
+
+        if (text && text.trim().length > 0) return { text, tokenUsage };
+        return { text: formatFallback(name!, fnResult), tokenUsage };
       } catch (fmtErr) {
         console.error("[Agent] Format error:", fmtErr);
-        return formatFallback(name!, fnResult);
+        return {
+          text: formatFallback(name!, fnResult),
+          tokenUsage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) }
+        };
       }
     }
 
     const text = candidate.content.parts.map((p) => p.text).filter(Boolean).join("");
-    return text || "Nao consegui gerar resposta. Reformule a pergunta.";
+    return {
+      text: text || "Nao consegui gerar resposta. Reformule a pergunta.",
+      tokenUsage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) }
+    };
   } catch (error) {
     console.error("[Agent] Fatal:", error);
-    if (error instanceof Error && error.message.includes("429")) return "Servico sobrecarregado. Tente em segundos.";
-    return "Erro ao processar. Tente novamente.";
+    const tokenUsage: TokenUsage = { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) };
+    if (error instanceof Error && error.message.includes("429")) return { text: "Servico sobrecarregado. Tente em segundos.", tokenUsage };
+    return { text: "Erro ao processar. Tente novamente.", tokenUsage };
   }
 }
+

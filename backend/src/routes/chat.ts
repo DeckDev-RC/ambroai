@@ -55,12 +55,12 @@ router.post("/message", async (req: Request, res: Response) => {
     await addMessage(conversation.id, userMsg);
 
     // Process with AI agent
-    const aiResponse = await processMessage(message, history);
+    const aiResult = await processMessage(message, history);
 
     // Save assistant message
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: aiResponse,
+      content: aiResult.text,
       timestamp: new Date().toISOString(),
     };
     await addMessage(conversation.id, assistantMsg);
@@ -68,8 +68,9 @@ router.post("/message", async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        message: aiResponse,
+        message: aiResult.text,
         conversation_id: conversation.id,
+        tokenUsage: aiResult.tokenUsage,
       },
     });
   } catch (error) {

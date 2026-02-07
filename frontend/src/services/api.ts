@@ -82,13 +82,19 @@ class ApiService {
 
   // ── Chat ────────────────────────────────────────
   async sendMessage(message: string, conversationId?: string) {
-    return this.request<{ message: string; conversation_id: string }>(
-      "/api/chat/message",
-      {
-        method: "POST",
-        body: JSON.stringify({ message, conversation_id: conversationId }),
-      }
-    );
+    return this.request<{
+      message: string;
+      conversation_id: string;
+      tokenUsage?: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+        estimatedCostUSD: number;
+      };
+    }>("/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({ message, conversation_id: conversationId }),
+    });
   }
 
   async getChatHistory() {

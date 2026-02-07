@@ -5,10 +5,18 @@ import { ChatInput } from "../components/ChatInput";
 import { ConversationSidebar } from "../components/ConversationSidebar";
 import { Bot, LogOut, Trash2, Menu } from "lucide-react";
 
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostUSD: number;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+  tokenUsage?: TokenUsage;
 }
 
 interface ChatPageProps {
@@ -95,6 +103,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
           role: "assistant",
           content: result.data!.message,
           timestamp: new Date().toISOString(),
+          tokenUsage: result.data!.tokenUsage,
         },
       ]);
     } else {
@@ -447,6 +456,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
                   role={msg.role}
                   content={msg.content}
                   timestamp={msg.timestamp}
+                  tokenUsage={msg.tokenUsage}
                 />
               ))}
               {loading && (
