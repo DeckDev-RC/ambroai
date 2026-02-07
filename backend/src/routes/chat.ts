@@ -117,7 +117,7 @@ router.post("/new", async (req: Request, res: Response) => {
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.user;
-    const conversationId = req.params.id;
+    const conversationId = req.params.id as string;
 
     await clearConversation(conversationId, userId);
 

@@ -120,11 +120,12 @@ function buildDateRange(params: QueryParams): { start: string; end: string } | n
   return null; // Sem filtro = tudo
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(
-  query: ReturnType<typeof supabase.from>,
+  query: any,
   params: QueryParams,
   opts: { includeStatus?: boolean; includeMarketplace?: boolean } = {}
-) {
+): any {
   const { includeStatus = true, includeMarketplace = true } = opts;
   let q = query;
   if (includeStatus && params.status) q = q.ilike("status", params.status);
@@ -132,10 +133,11 @@ function applyFilters(
   return q;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyDateFilter(
-  query: ReturnType<typeof supabase.from>,
+  query: any,
   dateRange: { start: string; end: string } | null
-) {
+): any {
   if (!dateRange) return query;
   return query.gte("order_date", dateRange.start).lte("order_date", dateRange.end);
 }
@@ -143,7 +145,8 @@ function applyDateFilter(
 async function fetchAllRows<T extends Record<string, unknown>>(
   tableName: string,
   columns: string,
-  buildQuery: (query: ReturnType<typeof supabase.from>) => ReturnType<typeof supabase.from>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  buildQuery: (query: any) => any
 ): Promise<T[]> {
   const PAGE_SIZE = 1000;
   const allData: T[] = [];
@@ -155,7 +158,7 @@ async function fetchAllRows<T extends Record<string, unknown>>(
     const { data, error } = await query;
     if (error) throw new Error(`Erro na consulta: ${error.message}`);
     if (!data || data.length === 0) break;
-    allData.push(...(data as T[]));
+    allData.push(...(data as unknown as T[]));
     if (data.length < PAGE_SIZE) break;
   }
   return allData;
