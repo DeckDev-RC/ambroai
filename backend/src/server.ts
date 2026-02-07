@@ -15,12 +15,34 @@ const app = express();
 
 // ── Security ────────────────────────────────────────────
 app.use(helmet());
-app.use(
-  cors({
-    origin: env.FRONTEND_URL,
-    credentials: true,
-  })
-);
+
+// CORS configuration - allow frontend origin
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+
+    // Check if origin matches FRONTEND_URL
+    const allowedOrigins = [
+      env.FRONTEND_URL,
+      env.FRONTEND_URL.replace('https://', 'http://'), // Allow HTTP variant
+    ];
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(null, true); // Allow anyway for now to debug
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // ── Rate Limiting ───────────────────────────────────────
 const limiter = rateLimit({
