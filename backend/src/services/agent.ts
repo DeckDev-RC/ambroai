@@ -221,6 +221,11 @@ const functionDeclarations: FunctionDeclaration[] = [
       }
     },
   },
+  {
+    name: "healthCheck",
+    description: "DIAGNOSTICO RAPIDO com alertas inteligentes. Detecta automaticamente: faturamento abaixo/acima da media, cancelamentos anomalos, tendencia de ticket medio, comparacao YoY, performance semanal. Use para: 'como estao as coisas', 'algum alerta', 'saude do negocio', 'tem algo errado', 'diagnostico rapido', 'como estamos', 'novidades'.",
+    parameters: { type: "object" as Type, properties: {} },
+  },
 ];
 
 // ── System Prompt ───────────────────────────────────────
@@ -275,6 +280,7 @@ ESTRATEGICO:
 - executiveSummary: resumo executivo completo (dashboard de KPIs)
 - salesForecast: previsao de faturamento (media movel + tendencia)
 - seasonalityAnalysis: padroes sazonais e ciclos de venda
+- healthCheck: diagnostico rapido com alertas automaticos (faturamento, cancelamentos, ticket medio)
 
 ULTIMO RECURSO:
 - executeSQLQuery: SQL customizado
@@ -310,6 +316,25 @@ ULTIMO RECURSO:
     - Se possivel, quebre por periodo (mes a mes) ou marketplace
     - Use cancellationRate ou salesByMonth com status "cancelled" para dados mais ricos
     - Compare com pedidos pagos para dar contexto (ex: "taxa de cancelamento de X%")
+16. DADOS QUALIFICADOS - OBRIGATORIO:
+    - Quando o usuario pedir "relatorio", "resumo", "como estao os numeros", "me da os dados" ou qualquer pedido amplo de dados, SEMPRE inclua a DISTRIBUICAO POR STATUS completa
+    - Nunca retorne apenas o total geral — detalhe TODOS os status: Pagos (qtd + valor), Cancelados (qtd + valor), Enviados (qtd), Pendentes (qtd), e quaisquer outros status existentes
+    - Para cada status, mostre: quantidade de pedidos, valor total em R$, e percentual do total
+    - Se o periodo tem dados de multiplos marketplaces, inclua tambem o breakdown por canal
+    - Prefira usar executiveSummary ou combinar ordersByStatus + totalSales para garantir dados completos
+    - EXEMPLO: Em vez de "Total: 5.000 pedidos / R$ 750.000", responda:
+      "Total: 5.000 pedidos / R$ 750.000
+      - Pagos: 3.800 (76%) / R$ 620.000
+      - Cancelados: 600 (12%) / R$ 85.000
+      - Enviados: 400 (8%) / R$ 35.000
+      - Pendentes: 200 (4%) / R$ 10.000"
+    - Esta regra se aplica a QUALQUER resposta que envolva contagem ou faturamento de pedidos sem filtro de status especifico
+17. QUALIFICACAO POR CANAL: Quando mostrar dados de marketplaces, SEMPRE inclua para cada canal:
+    - Quantidade de pedidos
+    - Faturamento em R$
+    - Percentual de participacao (share)
+    - Ticket medio
+    - Taxa de cancelamento do canal
 
 ## Estilo
 Profissional e direto. Use termos de negocio (faturamento, ticket medio, taxa de conversao, mix de canais, sazonalidade). Apresente dados de forma organizada e termine com um insight util.
@@ -398,10 +423,29 @@ function formatFallback(fnName: string, result: unknown): string {
   try {
     switch (fnName) {
       case "countOrders":
+        if (r.by_status && typeof r.by_status === "object") {
+          const bySt = r.by_status as Record<string, number>;
+          const total = (r.total as number) || 0;
+          return "Total: **" + fNum(total) + " pedidos**\n\n" +
+            Object.entries(bySt).sort(([, a], [, b]) => b - a)
+              .map(([s, c]) => "- **" + (sPT[s] || s) + ":** " + fNum(c) + " (" + (total > 0 ? ((c / total) * 100).toFixed(1) : "0") + "%)").join("\n");
+        }
         return "Total: **" + fNum((r.total as number) || 0) + " pedidos**";
 
-      case "totalSales":
-        return "**Faturamento:** " + fBRL((r.total_sales as number) || 0) + "\n**Pedidos:** " + fNum((r.order_count as number) || 0);
+      case "totalSales": {
+        const lines = ["**Faturamento:** " + fBRL((r.total_sales as number) || 0) + "\n**Pedidos:** " + fNum((r.order_count as number) || 0)];
+        if (r.by_status && typeof r.by_status === "object") {
+          const bySt = r.by_status as Record<string, { count: number; total: number }>;
+          const totalOrders = (r.order_count as number) || 0;
+          lines.push("\n**Detalhamento por status:**");
+          Object.entries(bySt).sort(([, a], [, b]) => b.total - a.total)
+            .forEach(([s, d]) => {
+              lines.push("- **" + (sPT[s] || s) + ":** " + fNum(d.count) + " pedidos (" +
+                (totalOrders > 0 ? ((d.count / totalOrders) * 100).toFixed(1) : "0") + "%) — " + fBRL(d.total));
+            });
+        }
+        return lines.join("\n");
+      }
 
       case "avgTicket":
         return [
@@ -604,6 +648,25 @@ function formatFallback(fnName: string, result: unknown): string {
         ].join("\n");
       }
 
+      case "healthCheck": {
+        const alertsList = r.alerts as Array<{ type: string; message: string }>;
+        const hcSummary = r.summary as Record<string, unknown> | null;
+        const icons: Record<string, string> = { danger: "🔴", warning: "⚠️", success: "🟢", info: "ℹ️" };
+        const lines: string[] = ["## 🩺 Diagnóstico Rápido\n"];
+        if (alertsList) {
+          alertsList.forEach((a) => { lines.push(icons[a.type] + " " + a.message); lines.push(""); });
+        }
+        if (hcSummary) {
+          lines.push("---");
+          lines.push("📊 **Mês atual (" + (hcSummary.current_month as string) + "):** " +
+            fBRL((hcSummary.revenue_so_far as number) || 0) + " em " +
+            (hcSummary.days_passed as number) + " dias | " +
+            fNum((hcSummary.orders_so_far as number) || 0) + " pedidos | Faltam " +
+            (hcSummary.days_remaining as number) + " dias");
+        }
+        return lines.join("\n");
+      }
+
       default:
         return "```json\n" + JSON.stringify(r, null, 2).substring(0, 2000) + "\n```";
     }
@@ -623,7 +686,113 @@ export interface TokenUsage {
 export interface ProcessMessageResult {
   text: string;
   tokenUsage: TokenUsage;
+  suggestions?: string[];
 }
+
+// ── Contextual Suggestions Map ─────────────────────────
+// Sugestões determinísticas baseadas na função chamada — zero custo de tokens
+const SUGGESTIONS_MAP: Record<string, string[]> = {
+  countOrders: [
+    "Qual o faturamento total desse período?",
+    "Distribuição por status?",
+    "E por marketplace?",
+  ],
+  totalSales: [
+    "Qual o ticket médio?",
+    "Evolução mês a mês?",
+    "Qual marketplace fatura mais?",
+  ],
+  avgTicket: [
+    "Ticket médio por marketplace?",
+    "Evolução do ticket mês a mês?",
+    "Compare com o mês passado",
+  ],
+  ordersByStatus: [
+    "Quanto perdi em cancelamentos?",
+    "Evolução de cancelamentos por mês?",
+    "Taxa de cancelamento por marketplace?",
+  ],
+  ordersByMarketplace: [
+    "Qual marketplace cresce mais rápido?",
+    "Comparação detalhada entre canais",
+    "Cancelamentos por canal?",
+  ],
+  salesByMonth: [
+    "Qual a previsão para o próximo mês?",
+    "Qual a sazonalidade do negócio?",
+    "Compare com o ano anterior",
+  ],
+  salesByDayOfWeek: [
+    "E por hora do dia?",
+    "Quais foram os melhores dias de venda?",
+    "Faturamento mês a mês?",
+  ],
+  salesByHour: [
+    "E por dia da semana?",
+    "Quais os melhores dias?",
+    "Evolução mensal de vendas?",
+  ],
+  topDays: [
+    "E os piores dias?",
+    "Evolução mês a mês?",
+    "Qual dia da semana vende mais?",
+  ],
+  cancellationRate: [
+    "Evolução de cancelamentos por mês?",
+    "Qual marketplace cancela mais?",
+    "Quanto perdi em valor?",
+  ],
+  compareMarketplaces: [
+    "Qual marketplace cresce mais rápido?",
+    "Evolução mensal por canal?",
+    "Ticket médio por marketplace?",
+  ],
+  comparePeriods: [
+    "Compare com o ano anterior",
+    "Evolução mês a mês completa?",
+    "Previsão para o próximo mês?",
+  ],
+  salesForecast: [
+    "Me dá um resumo executivo completo",
+    "Qual a sazonalidade do negócio?",
+    "Compare com o ano anterior",
+  ],
+  executiveSummary: [
+    "Qual a previsão para o próximo mês?",
+    "Evolução de cancelamentos por mês?",
+    "Qual marketplace cresce mais rápido?",
+  ],
+  marketplaceGrowth: [
+    "Comparação detalhada entre canais",
+    "Qual a sazonalidade?",
+    "Previsão de faturamento?",
+  ],
+  cancellationByMonth: [
+    "Taxa de cancelamento por marketplace?",
+    "Qual a tendência de cancelamento?",
+    "Resumo executivo completo?",
+  ],
+  yearOverYear: [
+    "Sazonalidade do negócio?",
+    "Previsão para o próximo mês?",
+    "Resumo executivo?",
+  ],
+  seasonalityAnalysis: [
+    "Previsão para o próximo mês?",
+    "Quais foram os melhores dias do ano?",
+    "Resumo executivo completo?",
+  ],
+  healthCheck: [
+    "Me dá um resumo executivo completo",
+    "Qual a previsão para o próximo mês?",
+    "Evolução mês a mês?",
+  ],
+  executeSQLQuery: [
+    "Resumo executivo?",
+    "Vendas por marketplace?",
+    "Evolução mês a mês?",
+  ],
+};
 
 // Gemini 2.5 Flash pricing (per 1M tokens) - May 2025
 const GEMINI_PRICING = {
@@ -716,12 +885,13 @@ export async function processMessage(
           estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens),
         };
 
-        if (text && text.trim().length > 0) return { text, tokenUsage };
-        return { text: formatFallback(name!, fnResult), tokenUsage };
+        if (text && text.trim().length > 0) return { text, tokenUsage, suggestions: SUGGESTIONS_MAP[name!] };
+        return { text: formatFallback(name!, fnResult), tokenUsage, suggestions: SUGGESTIONS_MAP[name!] };
       } catch (fmtErr) {
         console.error("[Agent] Format error:", fmtErr);
         return {
           text: formatFallback(name!, fnResult),
+          suggestions: SUGGESTIONS_MAP[name!],
           tokenUsage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) }
         };
       }

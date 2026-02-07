@@ -85,6 +85,7 @@ class ApiService {
     return this.request<{
       message: string;
       conversation_id: string;
+      suggestions?: string[];
       tokenUsage?: {
         inputTokens: number;
         outputTokens: number;
@@ -121,6 +122,14 @@ class ApiService {
     return this.request<{ api: string; supabase: string; timestamp: string }>(
       "/api/health"
     );
+  }
+
+  async getHealthCheck() {
+    return this.request<{
+      message: string;
+      alerts: Array<{ type: string; message: string }>;
+      summary: Record<string, unknown> | null;
+    }>("/api/chat/health-check");
   }
 }
 

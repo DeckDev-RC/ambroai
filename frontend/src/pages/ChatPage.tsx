@@ -17,6 +17,7 @@ interface Message {
   content: string;
   timestamp: string;
   tokenUsage?: TokenUsage;
+  suggestions?: string[];
 }
 
 interface ChatPageProps {
@@ -104,6 +105,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
           content: result.data!.message,
           timestamp: new Date().toISOString(),
           tokenUsage: result.data!.tokenUsage,
+          suggestions: result.data!.suggestions,
         },
       ]);
     } else {
@@ -207,6 +209,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
       >
         {/* Header */}
         <header
+          className="chat-header"
           style={{
             display: "flex",
             alignItems: "center",
@@ -239,8 +242,8 @@ export function ChatPage({ onLogout }: ChatPageProps) {
             )}
             <div
               style={{
-                width: "36px",
-                height: "36px",
+                width: isMobile ? "30px" : "36px",
+                height: isMobile ? "30px" : "36px",
                 borderRadius: "10px",
                 background: "linear-gradient(135deg, #6366F1, #4F46E5)",
                 display: "flex",
@@ -250,7 +253,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
             >
               <Bot size={20} color="white" />
             </div>
-            <div>
+            <div className="chat-header-title">
               <h1
                 style={{
                   fontSize: "16px",
@@ -302,14 +305,16 @@ export function ChatPage({ onLogout }: ChatPageProps) {
               </button>
             )}
 
-            <div
-              style={{
-                width: "1px",
-                height: "24px",
-                background: "var(--border)",
-                margin: "0 4px",
-              }}
-            />
+            {!isMobile && (
+              <div
+                style={{
+                  width: "1px",
+                  height: "24px",
+                  background: "var(--border)",
+                  margin: "0 4px",
+                }}
+              />
+            )}
 
             <button
               onClick={handleLogout}
@@ -336,7 +341,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
               }}
             >
               <LogOut size={16} />
-              <span>{user}</span>
+              {!isMobile && <span>{user}</span>}
             </button>
           </div>
         </header>
@@ -352,6 +357,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
         >
           {messages.length === 0 ? (
             <div
+              className="welcome-container"
               style={{
                 flex: 1,
                 display: "flex",
@@ -363,6 +369,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
               }}
             >
               <div
+                className="welcome-icon"
                 style={{
                   width: "72px",
                   height: "72px",
@@ -379,6 +386,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
 
               <div style={{ textAlign: "center" }}>
                 <h2
+                  className="welcome-title"
                   style={{
                     fontSize: "22px",
                     fontWeight: 600,
@@ -389,6 +397,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
                   Olá! Eu sou o Ambro 👋
                 </h2>
                 <p
+                  className="welcome-subtitle"
                   style={{
                     fontSize: "15px",
                     color: "var(--text-secondary)",
@@ -403,6 +412,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
 
               {/* Suggestion chips */}
               <div
+                className="welcome-chips"
                 style={{
                   display: "flex",
                   flexWrap: "wrap",
@@ -411,6 +421,49 @@ export function ChatPage({ onLogout }: ChatPageProps) {
                   maxWidth: "600px",
                 }}
               >
+                {/* Health Check — botão principal */}
+                <button
+                  className="welcome-healthcheck"
+                  onClick={async () => {
+                    setLoading(true);
+                    const result = await api.getHealthCheck();
+                    if (result.success && result.data) {
+                      setMessages([{
+                        role: "assistant",
+                        content: result.data.message,
+                        timestamp: new Date().toISOString(),
+                      }]);
+                    }
+                    setLoading(false);
+                  }}
+                  disabled={loading}
+                  style={{
+                    padding: "12px 20px",
+                    background: "linear-gradient(135deg, rgba(99,102,241,0.15), transparent)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: "var(--radius-full)",
+                    color: "var(--accent)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-sans)",
+                    cursor: "pointer",
+                    transition: "all var(--transition)",
+                    whiteSpace: "nowrap",
+                    width: "100%",
+                    maxWidth: "360px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--accent)";
+                    e.currentTarget.style.color = "white";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.15), transparent)";
+                    e.currentTarget.style.color = "var(--accent)";
+                  }}
+                >
+                  🩺 Como está meu negócio hoje?
+                </button>
+
                 {[
                   "Quantos pedidos pagos em dezembro/2025?",
                   "Valor total de vendas do Bagy?",
@@ -419,6 +472,7 @@ export function ChatPage({ onLogout }: ChatPageProps) {
                 ].map((suggestion) => (
                   <button
                     key={suggestion}
+                    className="welcome-chip"
                     onClick={() => handleSend(suggestion)}
                     style={{
                       padding: "10px 16px",
@@ -449,15 +503,62 @@ export function ChatPage({ onLogout }: ChatPageProps) {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: "800px", width: "100%", margin: "0 auto" }}>
+            <div className="messages-scroll" style={{ maxWidth: "800px", width: "100%", margin: "0 auto" }}>
               {messages.map((msg, i) => (
-                <ChatMessage
-                  key={i}
-                  role={msg.role}
-                  content={msg.content}
-                  timestamp={msg.timestamp}
-                  tokenUsage={msg.tokenUsage}
-                />
+                <div key={i}>
+                  <ChatMessage
+                    role={msg.role}
+                    content={msg.content}
+                    timestamp={msg.timestamp}
+                    tokenUsage={msg.tokenUsage}
+                  />
+                  {/* Suggestion chips — only on last assistant message, when not loading */}
+                  {msg.role === "assistant" && msg.suggestions && msg.suggestions.length > 0 &&
+                    i === messages.length - 1 && !loading && (
+                    <div
+                      className="suggestion-chips"
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        padding: "8px 24px 16px 68px",
+                        animation: "fadeIn 0.3s ease-out",
+                      }}
+                    >
+                      {msg.suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          className="suggestion-chip"
+                          onClick={() => handleSend(suggestion)}
+                          style={{
+                            padding: "8px 14px",
+                            background: "var(--bg-tertiary)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-full)",
+                            color: "var(--text-secondary)",
+                            fontSize: "12px",
+                            fontFamily: "var(--font-sans)",
+                            cursor: "pointer",
+                            transition: "all var(--transition)",
+                            whiteSpace: "nowrap",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "var(--accent)";
+                            e.currentTarget.style.color = "var(--accent)";
+                            e.currentTarget.style.background = "rgba(99,102,241,0.1)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border)";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.background = "var(--bg-tertiary)";
+                          }}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
               {loading && (
                 <ChatMessage role="assistant" content="" isLoading />

@@ -54,7 +54,7 @@ export function ChatMessage({ role, content, timestamp, isLoading, tokenUsage }:
 
   return (
     <div
-      className="animate-in"
+      className="animate-in chat-message-row"
       style={{
         display: "flex",
         gap: "12px",
@@ -66,6 +66,7 @@ export function ChatMessage({ role, content, timestamp, isLoading, tokenUsage }:
     >
       {/* Avatar */}
       <div
+        className="chat-avatar"
         style={{
           width: "32px",
           height: "32px",
@@ -145,6 +146,7 @@ export function ChatMessage({ role, content, timestamp, isLoading, tokenUsage }:
             {/* Discrete token usage display */}
             {tokenUsage && !isUser && (
               <div
+                className="token-usage"
                 style={{
                   display: "flex",
                   alignItems: "center",

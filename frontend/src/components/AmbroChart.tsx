@@ -245,6 +245,7 @@ export function AmbroChart({ data }: { data: ChartData }) {
 
   return (
     <div
+      className="chart-container"
       style={{
         background: "var(--bg-tertiary)",
         borderRadius: "12px",
