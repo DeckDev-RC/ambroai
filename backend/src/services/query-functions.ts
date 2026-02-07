@@ -1095,6 +1095,167 @@ export async function seasonalityAnalysis(params: QueryParams) {
   };
 }
 
+// ── 19. healthCheck ─────────────────────────────────────
+// Alertas inteligentes proativos — diagnóstico automático do negócio
+export async function healthCheck(_params: QueryParams) {
+  const data = await fetchAllRows<{
+    status: string; marketplace: string; total_amount: number; order_date: string;
+  }>("orders", "status, marketplace, total_amount, order_date", (q) => q);
+
+  const alerts: Array<{ type: "danger" | "warning" | "success" | "info"; message: string; metric?: string }> = [];
+
+  // ── Agrupar por mês ───────────────────────────────────
+  const monthly: Record<string, { count: number; total: number; paid: number; cancelled: number; cancelledAmount: number }> = {};
+  const mktMonthly: Record<string, Record<string, { count: number; total: number; cancelled: number }>> = {};
+
+  data.forEach((row) => {
+    if (!row.order_date) return;
+    const month = toMonthBRT(row.order_date);
+    const amount = Number(row.total_amount) || 0;
+    const mkt = row.marketplace || "unknown";
+    const status = row.status?.toLowerCase() || "";
+
+    if (!monthly[month]) monthly[month] = { count: 0, total: 0, paid: 0, cancelled: 0, cancelledAmount: 0 };
+    monthly[month].count++;
+    monthly[month].total += amount;
+    if (status === "paid") monthly[month].paid++;
+    if (status === "cancelled") { monthly[month].cancelled++; monthly[month].cancelledAmount += amount; }
+
+    if (!mktMonthly[mkt]) mktMonthly[mkt] = {};
+    if (!mktMonthly[mkt][month]) mktMonthly[mkt][month] = { count: 0, total: 0, cancelled: 0 };
+    mktMonthly[mkt][month].count++;
+    mktMonthly[mkt][month].total += amount;
+    if (status === "cancelled") mktMonthly[mkt][month].cancelled++;
+  });
+
+  const sortedMonths = Object.keys(monthly).sort();
+  if (sortedMonths.length < 2) {
+    return { alerts: [{ type: "info" as const, message: "Dados insuficientes para análise (menos de 2 meses)" }], summary: null };
+  }
+
+  const nowBRT = toBRT(new Date().toISOString());
+  const currentMonthKey = `${nowBRT.getUTCFullYear()}-${String(nowBRT.getUTCMonth() + 1).padStart(2, "0")}`;
+  const dayOfMonth = nowBRT.getUTCDate();
+  const daysInCurrentMonth = new Date(nowBRT.getUTCFullYear(), nowBRT.getUTCMonth() + 1, 0).getDate();
+
+  const currentMonth = monthly[currentMonthKey];
+  const prevMonthKey = sortedMonths.filter((m) => m < currentMonthKey).pop();
+
+  // Média histórica (meses completos)
+  const completeMonths = sortedMonths.filter((m) => m < currentMonthKey);
+  const avgRevenue = completeMonths.length > 0
+    ? completeMonths.reduce((s, m) => s + monthly[m].total, 0) / completeMonths.length : 0;
+  const avgOrders = completeMonths.length > 0
+    ? completeMonths.reduce((s, m) => s + monthly[m].count, 0) / completeMonths.length : 0;
+
+  // ── ALERTA 1: Projeção do mês vs média ────────────────
+  if (currentMonth && dayOfMonth >= 5) {
+    const projected = (currentMonth.total / dayOfMonth) * daysInCurrentMonth;
+    const pct = avgRevenue > 0 ? ((projected - avgRevenue) / avgRevenue) * 100 : 0;
+    if (pct < -30) {
+      alerts.push({ type: "danger", metric: "revenue_projection",
+        message: `Faturamento projetado em R$ ${Math.round(projected).toLocaleString("pt-BR")} — ${Math.abs(Math.round(pct))}% ABAIXO da média (R$ ${Math.round(avgRevenue).toLocaleString("pt-BR")}). Faltam ${daysInCurrentMonth - dayOfMonth} dias.` });
+    } else if (pct < -10) {
+      alerts.push({ type: "warning", metric: "revenue_projection",
+        message: `Faturamento projetado ${Math.abs(Math.round(pct))}% abaixo da média. Atual: R$ ${Math.round(currentMonth.total).toLocaleString("pt-BR")} em ${dayOfMonth} dias.` });
+    } else if (pct > 20) {
+      alerts.push({ type: "success", metric: "revenue_projection",
+        message: `Mês em alta! Projeção de R$ ${Math.round(projected).toLocaleString("pt-BR")} — ${Math.round(pct)}% acima da média.` });
+    }
+  }
+
+  // ── ALERTA 2: YoY mesmo mês ───────────────────────────
+  const lastYearKey = sortedMonths.find((m) => {
+    const [y, mo] = m.split("-");
+    return mo === currentMonthKey.split("-")[1] && parseInt(y) < parseInt(currentMonthKey.split("-")[0]);
+  });
+  if (lastYearKey && currentMonth && dayOfMonth >= 5) {
+    const ly = monthly[lastYearKey];
+    const projected = (currentMonth.total / dayOfMonth) * daysInCurrentMonth;
+    const yoy = ly.total > 0 ? ((projected - ly.total) / ly.total) * 100 : 0;
+    if (Math.abs(yoy) > 15) {
+      alerts.push({ type: yoy < 0 ? "warning" : "success", metric: "yoy",
+        message: `vs ${lastYearKey}: ${yoy > 0 ? "+" : ""}${Math.round(yoy)}% em faturamento (era R$ ${Math.round(ly.total).toLocaleString("pt-BR")}).` });
+    }
+  }
+
+  // ── ALERTA 3: Taxa de cancelamento ────────────────────
+  if (currentMonth && currentMonth.count > 20) {
+    const rate = (currentMonth.cancelled / currentMonth.count) * 100;
+    const avgRate = completeMonths.length > 0
+      ? completeMonths.reduce((s, m) => s + (monthly[m].count > 0 ? (monthly[m].cancelled / monthly[m].count) * 100 : 0), 0) / completeMonths.length : 0;
+    if (rate > avgRate + 5) {
+      alerts.push({ type: "danger", metric: "cancellation",
+        message: `Taxa de cancelamento em ${rate.toFixed(1)}% — acima da média de ${avgRate.toFixed(1)}%. Perda: R$ ${Math.round(currentMonth.cancelledAmount).toLocaleString("pt-BR")}.` });
+    } else if (rate < avgRate - 3) {
+      alerts.push({ type: "success", metric: "cancellation",
+        message: `Cancelamentos em ${rate.toFixed(1)}% — melhor que a média de ${avgRate.toFixed(1)}%.` });
+    }
+  }
+
+  // ── ALERTA 4: Cancelamento por marketplace ────────────
+  const mktNames: Record<string, string> = { bagy: "Bagy", ml: "Mercado Livre", shopee: "Shopee", shein: "Shein", "physical store": "Loja Física" };
+  for (const [mkt, mktData] of Object.entries(mktMonthly)) {
+    const cur = mktData[currentMonthKey];
+    const prev = prevMonthKey ? mktData[prevMonthKey] : null;
+    if (cur && prev && cur.count > 10 && prev.count > 10) {
+      const curRate = (cur.cancelled / cur.count) * 100;
+      const prevRate = (prev.cancelled / prev.count) * 100;
+      if (curRate > prevRate + 8) {
+        alerts.push({ type: "warning", metric: "mkt_cancellation",
+          message: `Cancelamentos no ${mktNames[mkt] || mkt} subiram de ${prevRate.toFixed(1)}% para ${curRate.toFixed(1)}% este mês.` });
+      }
+    }
+  }
+
+  // ── ALERTA 5: Ticket médio tendência ──────────────────
+  const last3 = completeMonths.slice(-3);
+  if (last3.length === 3) {
+    const tk = last3.map((m) => monthly[m].count > 0 ? monthly[m].total / monthly[m].count : 0);
+    if (tk[0] > tk[1] && tk[1] > tk[2]) {
+      alerts.push({ type: "warning", metric: "avg_ticket",
+        message: `Ticket médio em queda há 3 meses: R$ ${Math.round(tk[0])} → R$ ${Math.round(tk[1])} → R$ ${Math.round(tk[2])}.` });
+    } else if (tk[0] < tk[1] && tk[1] < tk[2]) {
+      alerts.push({ type: "success", metric: "avg_ticket",
+        message: `Ticket médio crescendo há 3 meses: R$ ${Math.round(tk[0])} → R$ ${Math.round(tk[1])} → R$ ${Math.round(tk[2])}.` });
+    }
+  }
+
+  // ── ALERTA 6: Última semana ───────────────────────────
+  let weekTotal = 0, weekOrders = 0;
+  data.forEach((row) => {
+    if (!row.order_date) return;
+    const d = toBRT(row.order_date);
+    const daysAgo = Math.floor((nowBRT.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysAgo >= 0 && daysAgo < 7) {
+      weekTotal += Number(row.total_amount) || 0;
+      weekOrders++;
+    }
+  });
+  const avgWeekly = avgRevenue / 4.33;
+  if (weekTotal > avgWeekly * 1.3 && weekOrders > 20) {
+    alerts.push({ type: "success", metric: "weekly",
+      message: `Ótima semana! R$ ${Math.round(weekTotal).toLocaleString("pt-BR")} nos últimos 7 dias (${weekOrders} pedidos) — ${Math.round(((weekTotal / avgWeekly) - 1) * 100)}% acima da média semanal.` });
+  }
+
+  if (alerts.length === 0) {
+    alerts.push({ type: "info", message: "Tudo normal — sem alertas ou anomalias detectadas." });
+  }
+
+  return {
+    alerts,
+    summary: {
+      current_month: currentMonthKey,
+      days_passed: dayOfMonth,
+      days_remaining: daysInCurrentMonth - dayOfMonth,
+      revenue_so_far: currentMonth ? Math.round(currentMonth.total * 100) / 100 : 0,
+      orders_so_far: currentMonth ? currentMonth.count : 0,
+      avg_monthly_revenue: Math.round(avgRevenue * 100) / 100,
+      avg_monthly_orders: Math.round(avgOrders),
+    },
+  };
+}
+
 // ── Function Registry ───────────────────────────────────
 export const queryFunctions: Record<string, (params: QueryParams) => Promise<unknown>> = {
   countOrders,
@@ -1115,4 +1276,5 @@ export const queryFunctions: Record<string, (params: QueryParams) => Promise<unk
   cancellationByMonth,
   yearOverYear,
   seasonalityAnalysis,
+  healthCheck,
 };

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { processMessage } from "../services/agent";
+import { queryFunctions } from "../services/query-functions";
 import {
   getOrCreateConversation,
   addMessage,
@@ -11,6 +12,34 @@ import {
 import { ChatMessage } from "../types";
 
 const router = Router();
+
+// ── GET /api/chat/health-check ──────────────────────────
+// Executa healthCheck diretamente sem Gemini — rápido e sem custo de tokens
+router.get("/health-check", async (_req: Request, res: Response) => {
+  try {
+    const result = await queryFunctions.healthCheck({});
+    const r = result as {
+      alerts: Array<{ type: string; message: string }>;
+      summary: Record<string, unknown> | null;
+    };
+
+    const icons: Record<string, string> = { danger: "🔴", warning: "⚠️", success: "🟢", info: "ℹ️" };
+    const fBRL = (v: number) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    let text = "## 🩺 Diagnóstico Rápido\n\n";
+    r.alerts.forEach((a) => { text += icons[a.type] + " " + a.message + "\n\n"; });
+
+    if (r.summary) {
+      text += "---\n";
+      text += `📊 **Mês atual (${r.summary.current_month}):** ${fBRL((r.summary.revenue_so_far as number) || 0)} em ${r.summary.days_passed} dias | ${((r.summary.orders_so_far as number) || 0).toLocaleString("pt-BR")} pedidos | Faltam ${r.summary.days_remaining} dias`;
+    }
+
+    res.json({ success: true, data: { message: text, alerts: r.alerts, summary: r.summary } });
+  } catch (error) {
+    console.error("Erro no health-check:", error);
+    res.status(500).json({ success: false, error: "Erro ao gerar diagnóstico" });
+  }
+});
 
 // ── POST /api/chat/message ──────────────────────────────
 const messageSchema = z.object({
@@ -71,6 +100,7 @@ router.post("/message", async (req: Request, res: Response) => {
         message: aiResult.text,
         conversation_id: conversation.id,
         tokenUsage: aiResult.tokenUsage,
+        suggestions: aiResult.suggestions,
       },
     });
   } catch (error) {

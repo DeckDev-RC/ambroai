@@ -221,6 +221,11 @@ const functionDeclarations: FunctionDeclaration[] = [
       }
     },
   },
+  {
+    name: "healthCheck",
+    description: "DIAGNOSTICO RAPIDO com alertas inteligentes. Detecta automaticamente: faturamento abaixo/acima da media, cancelamentos anomalos, tendencia de ticket medio, comparacao YoY, performance semanal. Use para: 'como estao as coisas', 'algum alerta', 'saude do negocio', 'tem algo errado', 'diagnostico rapido', 'como estamos', 'novidades'.",
+    parameters: { type: "object" as Type, properties: {} },
+  },
 ];
 
 // ── System Prompt ───────────────────────────────────────
@@ -275,6 +280,7 @@ ESTRATEGICO:
 - executiveSummary: resumo executivo completo (dashboard de KPIs)
 - salesForecast: previsao de faturamento (media movel + tendencia)
 - seasonalityAnalysis: padroes sazonais e ciclos de venda
+- healthCheck: diagnostico rapido com alertas automaticos (faturamento, cancelamentos, ticket medio)
 
 ULTIMO RECURSO:
 - executeSQLQuery: SQL customizado
@@ -604,6 +610,25 @@ function formatFallback(fnName: string, result: unknown): string {
         ].join("\n");
       }
 
+      case "healthCheck": {
+        const alertsList = r.alerts as Array<{ type: string; message: string }>;
+        const hcSummary = r.summary as Record<string, unknown> | null;
+        const icons: Record<string, string> = { danger: "🔴", warning: "⚠️", success: "🟢", info: "ℹ️" };
+        const lines: string[] = ["## 🩺 Diagnóstico Rápido\n"];
+        if (alertsList) {
+          alertsList.forEach((a) => { lines.push(icons[a.type] + " " + a.message); lines.push(""); });
+        }
+        if (hcSummary) {
+          lines.push("---");
+          lines.push("📊 **Mês atual (" + (hcSummary.current_month as string) + "):** " +
+            fBRL((hcSummary.revenue_so_far as number) || 0) + " em " +
+            (hcSummary.days_passed as number) + " dias | " +
+            fNum((hcSummary.orders_so_far as number) || 0) + " pedidos | Faltam " +
+            (hcSummary.days_remaining as number) + " dias");
+        }
+        return lines.join("\n");
+      }
+
       default:
         return "```json\n" + JSON.stringify(r, null, 2).substring(0, 2000) + "\n```";
     }
@@ -623,7 +648,113 @@ export interface TokenUsage {
 export interface ProcessMessageResult {
   text: string;
   tokenUsage: TokenUsage;
+  suggestions?: string[];
 }
+
+// ── Contextual Suggestions Map ─────────────────────────
+// Sugestões determinísticas baseadas na função chamada — zero custo de tokens
+const SUGGESTIONS_MAP: Record<string, string[]> = {
+  countOrders: [
+    "Qual o faturamento total desse período?",
+    "Distribuição por status?",
+    "E por marketplace?",
+  ],
+  totalSales: [
+    "Qual o ticket médio?",
+    "Evolução mês a mês?",
+    "Qual marketplace fatura mais?",
+  ],
+  avgTicket: [
+    "Ticket médio por marketplace?",
+    "Evolução do ticket mês a mês?",
+    "Compare com o mês passado",
+  ],
+  ordersByStatus: [
+    "Quanto perdi em cancelamentos?",
+    "Evolução de cancelamentos por mês?",
+    "Taxa de cancelamento por marketplace?",
+  ],
+  ordersByMarketplace: [
+    "Qual marketplace cresce mais rápido?",
+    "Comparação detalhada entre canais",
+    "Cancelamentos por canal?",
+  ],
+  salesByMonth: [
+    "Qual a previsão para o próximo mês?",
+    "Qual a sazonalidade do negócio?",
+    "Compare com o ano anterior",
+  ],
+  salesByDayOfWeek: [
+    "E por hora do dia?",
+    "Quais foram os melhores dias de venda?",
+    "Faturamento mês a mês?",
+  ],
+  salesByHour: [
+    "E por dia da semana?",
+    "Quais os melhores dias?",
+    "Evolução mensal de vendas?",
+  ],
+  topDays: [
+    "E os piores dias?",
+    "Evolução mês a mês?",
+    "Qual dia da semana vende mais?",
+  ],
+  cancellationRate: [
+    "Evolução de cancelamentos por mês?",
+    "Qual marketplace cancela mais?",
+    "Quanto perdi em valor?",
+  ],
+  compareMarketplaces: [
+    "Qual marketplace cresce mais rápido?",
+    "Evolução mensal por canal?",
+    "Ticket médio por marketplace?",
+  ],
+  comparePeriods: [
+    "Compare com o ano anterior",
+    "Evolução mês a mês completa?",
+    "Previsão para o próximo mês?",
+  ],
+  salesForecast: [
+    "Me dá um resumo executivo completo",
+    "Qual a sazonalidade do negócio?",
+    "Compare com o ano anterior",
+  ],
+  executiveSummary: [
+    "Qual a previsão para o próximo mês?",
+    "Evolução de cancelamentos por mês?",
+    "Qual marketplace cresce mais rápido?",
+  ],
+  marketplaceGrowth: [
+    "Comparação detalhada entre canais",
+    "Qual a sazonalidade?",
+    "Previsão de faturamento?",
+  ],
+  cancellationByMonth: [
+    "Taxa de cancelamento por marketplace?",
+    "Qual a tendência de cancelamento?",
+    "Resumo executivo completo?",
+  ],
+  yearOverYear: [
+    "Sazonalidade do negócio?",
+    "Previsão para o próximo mês?",
+    "Resumo executivo?",
+  ],
+  seasonalityAnalysis: [
+    "Previsão para o próximo mês?",
+    "Quais foram os melhores dias do ano?",
+    "Resumo executivo completo?",
+  ],
+  healthCheck: [
+    "Me dá um resumo executivo completo",
+    "Qual a previsão para o próximo mês?",
+    "Evolução mês a mês?",
+  ],
+  executeSQLQuery: [
+    "Resumo executivo?",
+    "Vendas por marketplace?",
+    "Evolução mês a mês?",
+  ],
+};
 
 // Gemini 2.5 Flash pricing (per 1M tokens) - May 2025
 const GEMINI_PRICING = {
@@ -716,12 +847,13 @@ export async function processMessage(
           estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens),
         };
 
-        if (text && text.trim().length > 0) return { text, tokenUsage };
-        return { text: formatFallback(name!, fnResult), tokenUsage };
+        if (text && text.trim().length > 0) return { text, tokenUsage, suggestions: SUGGESTIONS_MAP[name!] };
+        return { text: formatFallback(name!, fnResult), tokenUsage, suggestions: SUGGESTIONS_MAP[name!] };
       } catch (fmtErr) {
         console.error("[Agent] Format error:", fmtErr);
         return {
           text: formatFallback(name!, fnResult),
+          suggestions: SUGGESTIONS_MAP[name!],
           tokenUsage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens, totalTokens: totalInputTokens + totalOutputTokens, estimatedCostUSD: calculateCost(totalInputTokens, totalOutputTokens) }
         };
       }
