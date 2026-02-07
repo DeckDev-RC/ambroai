@@ -108,11 +108,15 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       [/\bchein\b/gi, "Shein"],
       [/\bshein\b/gi, "Shein"],
 
-      // Status
-      [/\bpagos?\b/gi, (m) => m.toLowerCase()],
-      [/\bcancelados?\b/gi, (m) => m.toLowerCase()],
-      [/\bpendentes?\b/gi, (m) => m.toLowerCase()],
-      [/\benviados?\b/gi, (m) => m.toLowerCase()],
+      // Status - keep lowercase
+      [/\bPAGOS?\b/gi, "pagos"],
+      [/\bPAGO\b/gi, "pago"],
+      [/\bCANCELADOS?\b/gi, "cancelados"],
+      [/\bCANCELADO\b/gi, "cancelado"],
+      [/\bPENDENTES?\b/gi, "pendentes"],
+      [/\bPENDENTE\b/gi, "pendente"],
+      [/\bENVIADOS?\b/gi, "enviados"],
+      [/\bENVIADO\b/gi, "enviado"],
 
       // Termos de negócio
       [/\bfaturanento\b/gi, "faturamento"],
@@ -296,20 +300,20 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           // Sample from frequency data
           const dataIdx = Math.floor((i / barCount) * bufferLength * 0.7);
           const value = dataArray[dataIdx] / 255;
-          
+
           // Min height + dynamic
           const barHeight = Math.max(4, value * (H * 0.8));
           const halfBar = barHeight / 2;
-          
+
           const x = i * (barWidth + gap);
-          
+
           // Gradient from accent to danger
           const t = i / barCount;
           const r = Math.round(99 + (248 - 99) * t);
           const g = Math.round(102 + (113 - 102) * t);
           const b = Math.round(241 + (113 - 241) * t);
           const alpha = 0.6 + value * 0.4;
-          
+
           ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
           ctx.beginPath();
           ctx.roundRect(x, centerY - halfBar, barWidth, barHeight, barWidth / 2);
